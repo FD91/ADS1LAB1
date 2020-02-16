@@ -95,10 +95,11 @@ void Enqueue(pqueueADT pqueue, int newValue)
 	else {
 		while (currentNode) {
 			if (currentNode->array[currentNode->nElements - 1] <= newValue) {
-				// Kolla om man behöver expandera och iså fall Länka om lastNode
 				if (currentNode->nElements == MAX_ELEMS_PER_BLOCK) {
 					splitCellT(currentNode);
-					currentNode = currentNode->link; // Ny
+					if (newValue <= currentNode->link->array[0]) {  // Ny
+						currentNode = currentNode->link;
+					}
 				}
 				currentNode->array[(currentNode->nElements)++] = newValue;
 				for (i = currentNode->nElements - 1; i > 0; i--) {
@@ -111,7 +112,7 @@ void Enqueue(pqueueADT pqueue, int newValue)
 				}
 				return;
 			}
-			else { // gå till nästa
+			else {
 				lastNode = currentNode;
 				currentNode = currentNode->link;
 			}
