@@ -1,11 +1,11 @@
 /*
  * File: pqueue.c
  * --------------
- * Den här filen implementerar en prioritetskö med en
- * vektor med konstant storlek. Implementeringen gör det lätt
- * att sätta in nya element med svårt att plocka ut det största.
+ * Den hÃ¤r filen implementerar en prioritetskÃ¶ med en
+ * vektor med konstant storlek. Implementeringen gÃ¶r det lÃ¤tt
+ * att sÃ¤tta in nya element med svÃ¥rt att plocka ut det stÃ¶rsta.
  *
- * Cecilia Sönströd, Algoritmer och Datastrukturer 1, vt2020
+ * Cecilia SÃ¶nstrÃ¶d, Algoritmer och Datastrukturer 1, vt2020
  */
 
 #include "pqueue.h"
@@ -13,16 +13,41 @@
 
  /* Constant: MAX_ELEMENTS
   * ----------------------
-  * Den här konstanten anger antalet element i den vektor som
-  * utgör representationen av prioritetskön.
+  * Den hÃ¤r konstanten anger antalet element i den vektor som
+  * utgÃ¶r representationen av prioritetskÃ¶n.
   */
 
-#define MAX_ELEMENTS 1200000
+#define MAX_ELEMS_PER_BLOCK 3
+
+typedef struct cellT {
+	int nElements;
+	int* array;
+	struct cellT* link;
+} *cellT;
 
 struct pqueueCDT {
-	int entries[MAX_ELEMENTS];
-	int numEntries;
+	cellT head;
 };
+
+static splitCellT(cellT oldNode) {
+	cellT newNode;
+	int i, j;
+
+	newNode = New(cellT);
+	newNode->nElements = 1;
+	newNode->array = NewArray(MAX_ELEMS_PER_BLOCK, int);
+
+	j = 0;
+	for (i = MAX_ELEMS_PER_BLOCK / 2; i < MAX_ELEMS_PER_BLOCK; i++) {
+		newNode->array[j] = oldNode->array[i];
+		j++;
+	}
+	newNode->link = oldNode->link;
+	oldNode->link = newNode;
+	
+	oldNode->nElements = MAX_ELEMS_PER_BLOCK / 2;
+	newNode->nElements = MAX_ELEMS_PER_BLOCK - oldNode->nElements;
+}
 
 /* Exported endries */
 
@@ -31,7 +56,7 @@ pqueueADT NewPQueue(void)
 	pqueueADT pqueue;
 
 	pqueue = New(pqueueADT);
-	pqueue->numEntries = 0;
+	pqueue->head = NULL;
 	return (pqueue);
 }
 
@@ -42,54 +67,95 @@ void FreePQueue(pqueueADT pqueue)
 
 bool IsEmpty(pqueueADT pqueue)
 {
-	return (pqueue->numEntries == 0);
+	return pqueue->head == NULL;
 }
 
 bool IsFull(pqueueADT pqueue)
 {
-	return (pqueue->numEntries == MAX_ELEMENTS);
+	return FALSE;
 }
-
-/*
- * Implementation notes: Enqueue
- * -----------------------------
- * Då elementen sparas osorterat i fältet behöver endast nya
- * elementet placeras i slutet av fältet.
- */
 
 void Enqueue(pqueueADT pqueue, int newValue)
 {
-	if (IsFull(pqueue))
-		Error("Tried to enqueue into a priority queue which is full!");
-	pqueue->entries[pqueue->numEntries++] = newValue;
+	cellT newNode, lastNode, currentNode;
+	int i, temp;
+
+	currentNode = pqueue->head;
+	lastNode = NULL;
+
+	if (IsEmpty(pqueue)) {
+		// LÃ¤gga in i egen funktion?
+		newNode = New(cellT);
+		newNode->nElements = 1;
+		newNode->array = NewArray(MAX_ELEMS_PER_BLOCK, int);
+		newNode->array[0] = newValue;
+		newNode->link = NULL;
+		pqueue->head = newNode;
+	}
+	else {
+		while (currentNode) {
+			if (currentNode->array[currentNode->nElements - 1] <= newValue) {
+				// Kolla om man behÃ¶ver expandera och isÃ¥ fall LÃ¤nka om lastNode
+				if (currentNode->nElements == MAX_ELEMS_PER_BLOCK) {
+					splitCellT(currentNode);
+					currentNode = currentNode->link; // Ny
+				}
+				currentNode->array[(currentNode->nElements)++] = newValue;
+				for (i = currentNode->nElements - 1; i > 0; i--) {
+					if (currentNode->array[i] > currentNode->array[i - 1]) {
+						temp = currentNode->array[i];
+						currentNode->array[i] = currentNode->array[i - 1];
+						currentNode->array[i - 1] = temp;
+					}
+					else break;
+				}
+				return;
+			}
+			else { // gÃ¥ till nÃ¤sta
+				lastNode = currentNode;
+				currentNode = currentNode->link;
+			}
+		}
+		// LÃ¤gga in i egen funktion?
+		newNode = New(cellT);
+		newNode->nElements = 1;
+		newNode->array = NewArray(MAX_ELEMS_PER_BLOCK, int);
+		newNode->array[0] = newValue;
+		newNode->link = NULL;
+		lastNode->link = newNode;
+	}
 }
 
 /*
  * Implementation notes: DequeueMax
  * -------------------------------------------------
- * Då elementen sparas osorterat i fältet måste en sökning göras
- * för att finna det största elementet. För att ta bort det största
- * elementet flyttas det sista elementet i fältet till den position
- * i vilken det största elementet återfanns samtidigt som antalet
- * element i fältet minskas med 1. Det värde som tas bort returneras från
+ * DÃ¥ elementen sparas osorterat i fÃ¤ltet mÃ¥ste en sÃ¶kning gÃ¶ras
+ * fÃ¶r att finna det stÃ¶rsta elementet. FÃ¶r att ta bort det stÃ¶rsta
+ * elementet flyttas det sista elementet i fÃ¤ltet till den position
+ * i vilken det stÃ¶rsta elementet Ã¥terfanns samtidigt som antalet
+ * element i fÃ¤ltet minskas med 1. Det vÃ¤rde som tas bort returneras frÃ¥n
  * funktionen.
  */
 
 int DequeueMax(pqueueADT pqueue)
 {
-	int maxIndex, value, i;
+	cellT temp;
+	int value = 0;
+	int i;
 
 	if (IsEmpty(pqueue))
 		Error("Tried to dequeue max from an empty pqueue!");
-
-	maxIndex = 0;
-	for (i = 1; i < pqueue->numEntries; i++) {
-		if (pqueue->entries[i] > pqueue->entries[maxIndex])
-			maxIndex = i;
+	else {
+		value = pqueue->head->array[0];
+		pqueue->head->nElements--;
+		for (i = 0; i < pqueue->head->nElements; i++) { // changed <= to <
+			pqueue->head->array[i] = pqueue->head->array[i + 1];
+		}
+		if (pqueue->head->nElements == 0) {
+			temp = pqueue->head;
+			pqueue->head = pqueue->head->link;
+			free(temp);
+		}
 	}
-	/* spara värdet som skall returneras */
-	value = pqueue->entries[maxIndex];
-	/* flytta det sista värdet i fältet hit */
-	pqueue->entries[maxIndex] = pqueue->entries[--(pqueue->numEntries)];
-	return (value);
+	return value;
 }
