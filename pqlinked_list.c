@@ -1,11 +1,11 @@
 /*
  * File: pqueue.c
  * --------------
- * Den här filen implementerar en prioritetskö med en
- * vektor med konstant storlek. Implementeringen gör det lätt
- * att sätta in nya element med svårt att plocka ut det största.
+ * Den hÃ¤r filen implementerar en prioritetskÃ¶ med en
+ * vektor med konstant storlek. Implementeringen gÃ¶r det lÃ¤tt
+ * att sÃ¤tta in nya element med svÃ¥rt att plocka ut det stÃ¶rsta.
  *
- * Cecilia Sönströd, Algoritmer och Datastrukturer 1, vt2020
+ * Cecilia SÃ¶nstrÃ¶d, Algoritmer och Datastrukturer 1, vt2020
  */
 
 #include "pqueue.h"
@@ -13,8 +13,8 @@
 
  /* Constant: MAX_ELEMENTS
   * ----------------------
-  * Den här konstanten anger antalet element i den vektor som
-  * utgör representationen av prioritetskön.
+  * Den hÃ¤r konstanten anger antalet element i den vektor som
+  * utgÃ¶r representationen av prioritetskÃ¶n.
   */
 
 #define MAX_ELEMENTS 1200000
@@ -63,23 +63,31 @@ void Enqueue(pqueueADT pqueue, int newValue)
 	newNode->link = NULL;
 
 	currentNode = NULL;
-	lastNode = pqueue->head; // antagligen fel, kanske NULL
+	lastNode = NULL;
 
 	if (IsEmpty(pqueue)) {
-		pqueue->head = newNode;
+		pqueue->head = newNode; // IstÃ¤llet fÃ¶r NULL, detta krÃ¤vs om newNode har Ã¤r ett nytt hÃ¶gstavÃ¤rde
 	}
 	else {
 		currentNode = pqueue->head;
+		// Test om fÃ¶rsta vÃ¤rdet Ã¤r mindre Ã¤n nya
+		if (currentNode->value <= newNode->value) {
+			pqueue->head = newNode;
+			newNode->link = currentNode;
+			return;
+		}
 		while (currentNode != NULL) {
-			if (currentNode->value <= newNode->value) {
+			if (currentNode->value <= newNode->value) { // sÃ¤tt in det nya vÃ¤rdet i mellan
+				lastNode->link = newNode;
 				newNode->link = currentNode;
-				lastNode = newNode;
+				return;
 			}
-			else {
+			else { // gÃ¥ vidare
 				lastNode = currentNode;
 				currentNode = currentNode->link;
 			}
 		}
+		// om vi kommit till slutet
 		lastNode->link = newNode;
 	}
 }
@@ -87,11 +95,11 @@ void Enqueue(pqueueADT pqueue, int newValue)
 /*
  * Implementation notes: DequeueMax
  * -------------------------------------------------
- * Då elementen sparas osorterat i fältet måste en sökning göras
- * för att finna det största elementet. För att ta bort det största
- * elementet flyttas det sista elementet i fältet till den position
- * i vilken det största elementet återfanns samtidigt som antalet
- * element i fältet minskas med 1. Det värde som tas bort returneras från
+ * DÃ¥ elementen sparas osorterat i fÃ¤ltet mÃ¥ste en sÃ¶kning gÃ¶ras
+ * fÃ¶r att finna det stÃ¶rsta elementet. FÃ¶r att ta bort det stÃ¶rsta
+ * elementet flyttas det sista elementet i fÃ¤ltet till den position
+ * i vilken det stÃ¶rsta elementet Ã¥terfanns samtidigt som antalet
+ * element i fÃ¤ltet minskas med 1. Det vÃ¤rde som tas bort returneras frÃ¥n
  * funktionen.
  */
 
