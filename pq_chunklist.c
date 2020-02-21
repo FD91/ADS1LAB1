@@ -17,14 +17,12 @@
 * utgör representationen av prioritetskön.
 */
 
-#define MAX_ELEMS_PER_BLOCK 100
+#define MAX_ELEMS_PER_BLOCK 4
 
 /* Prototypes for static functions
  * cellT creatCellT(int newValue);
- * void splitCellT(cellT oldNode); 
+ * void splitCellT(cellT oldNode);
  */
-
-
 
 typedef struct cellT {
 	int nElements;
@@ -46,23 +44,27 @@ static cellT creatCellT(int newValue) {
 }
 
 
-static void splitCellT(cellT oldNode) {
+static void splitCellT(cellT currentNode) {
 	cellT newNode;
 	int i, j;
 
 	newNode = New(cellT);
 	newNode->nElements = 1;
 
+	for (i = 0; i < MAX_ELEMS_PER_BLOCK / 2; i++) {
+		newNode->array[i] = currentNode->array[i];
+	}
 	j = 0;
-	for (i = MAX_ELEMS_PER_BLOCK / 2; i < MAX_ELEMS_PER_BLOCK; i++) {
-		newNode->array[j] = oldNode->array[i];
+	for (i = i; i < MAX_ELEMS_PER_BLOCK; i++) {
+		currentNode->array[j] = currentNode->array[i];
 		j++;
 	}
-	newNode->link = oldNode->link;
-	oldNode->link = newNode;
 
-	oldNode->nElements = MAX_ELEMS_PER_BLOCK / 2;
-	newNode->nElements = MAX_ELEMS_PER_BLOCK - oldNode->nElements;
+	newNode->link = currentNode->link;
+	currentNode->link = newNode;
+
+	currentNode->nElements = MAX_ELEMS_PER_BLOCK / 2;
+	newNode->nElements = MAX_ELEMS_PER_BLOCK - currentNode->nElements;
 }
 
 /* Exported endries */
@@ -105,16 +107,16 @@ void Enqueue(pqueueADT pqueue, int newValue)
 	}
 	else {
 		while (currentNode) {
-			if (currentNode->array[currentNode->nElements - 1] <= newValue) {
+			if (currentNode->array[0] <= newValue || !currentNode->link) {
 				if (currentNode->nElements == MAX_ELEMS_PER_BLOCK) {
-					splitCellT(currentNode);
-					if (newValue <= currentNode->link->array[0]) {  // Ny
+					splitCellT(currentNode, lastNode);
+					if (newValue <= currentNode->link->array[currentNode->nElements - 1]) {
 						currentNode = currentNode->link;
 					}
 				}
 				currentNode->array[(currentNode->nElements)++] = newValue;
 				for (i = currentNode->nElements - 1; i > 0; i--) {
-					if (currentNode->array[i] > currentNode->array[i - 1]) {
+					if (currentNode->array[i] < currentNode->array[i - 1]) {
 						temp = currentNode->array[i];
 						currentNode->array[i] = currentNode->array[i - 1];
 						currentNode->array[i - 1] = temp;
@@ -153,11 +155,7 @@ int DequeueMax(pqueueADT pqueue)
 	if (IsEmpty(pqueue))
 		Error("Tried to dequeue max from an empty pqueue!");
 	else {
-		value = pqueue->head->array[0];
-		pqueue->head->nElements--;
-		for (i = 0; i < pqueue->head->nElements; i++) { // changed <= to <
-			pqueue->head->array[i] = pqueue->head->array[i + 1];
-		}
+		value = pqueue->head->array[--(pqueue->head->nElements)];
 		if (pqueue->head->nElements == 0) {
 			temp = pqueue->head;
 			pqueue->head = pqueue->head->link;
