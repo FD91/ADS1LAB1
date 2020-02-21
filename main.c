@@ -3,30 +3,21 @@
 
 main() {
 	int i;
+	int temp;
 
 	pqueueADT queue;
 	queue = NewPQueue();
 	Randomize();
 	Randomize();
 
-	printf("Adds 100 items\n\n");
-	for (i = 0; i < 3; i++) {
-		Enqueue(queue, RandomInteger(0, 100));
+	for (i = 0; i < 100000; i++) {
+		temp = RandomInteger(1, 100);
+		printf("Adding: %d\n", temp);
+		Enqueue(queue, temp);
 	}
 	
-	printf("Dequeue 90 items\n\n");
-	for (i = 0; i < 2; i++) {
-		printf("%d\n", DequeueMax(queue));
-	}
-
-	printf("Adds 5 items\n\n");
-	for (i = 0; i < 1; i++) {
-		Enqueue(queue, RandomInteger(0, 100));
-	}
-
-	printf("Dequeue 15 items\n\n");
-	for (i = 0; i < 1; i++) {
-		printf("%d\n", DequeueMax(queue));
+	for (i = 0; i < 10000; i*=1000) {
+		printf("Dequeue returned: %d\n", DequeueMax(queue));
 	}
 
 	if (IsEmpty(queue)) {
