@@ -1,28 +1,40 @@
 /*
- * File: pqueue.c
- * --------------
- * Den h�r filen implementerar en prioritetsk� med en
- * vektor med konstant storlek. Implementeringen g�r det l�tt
- * att s�tta in nya element med sv�rt att plocka ut det st�rsta.
- *
- * Cecilia S�nstr�d, Algoritmer och Datastrukturer 1, vt2020
- */
+* File: pqsorted_array.c
+* ---------------
+* Author: Jonathan Thornander, Christoffer Ivarsson Orrelid, Fredrik Dhami
+*
+* Task: Detta program implementerar en prioritetskö
+* i form av en dynamiskt minnesallokerad array. Listan
+* räknar aktuellt antal element mot ett maxantal som
+* anges via en förbestämd konstant och expanderar sedan
+* vid behov för att förhindra att den blir full.
+*
+* Prioritetskön tar endast heltalsvärden som input
+* och sorterar dem i stigande ordning där minst tal
+* hamnar först och det största talet tas ut först vid
+* Dequeue.
+*/
 
 #include "pqueue.h"
 #include "genlib.h"
 
-//Static Functions - OBS kolla med Cecilia om vi ska l�gga dessa i H-filen
-
-static void expandArray(pqueueADT pqueue);
-
  /* Constant: MAX_ELEMENTS
   * ----------------------
-  * Den h�r konstanten anger antalet element i den vektor som
-  * utg�r representationen av prioritetsk�n.
+  * Den här konstanten anger det initiala maxantalet
+  * element i den dynamiskt allokerade vektorn.
   */
 
-#define START_MAX_ELEMENTS 1
+#define START_MAX_ELEMENTS 10
 
+  /* Type definition: pqueueCDT
+   * --------------------
+   * Typen pqueueCDT är den konkreta implementeringen av
+   * den exporterade typen pqueueADT. pqueueCDT innehåller
+   * en int-pekare som fungerar som själva listan och två
+   * variabler för aktuellt maxantal element (föränderligt
+   * allteftersom listan expanderar) och faktiskt antal
+   * element i listan.
+   */
 struct pqueueCDT {
 	int *entries;
 	int current_max_size;
@@ -30,7 +42,14 @@ struct pqueueCDT {
 };
 
 /* Exported endries */
-
+/*
+* Function: NewPQueue
+* Usage: pqueue = NewPQueue();
+* -------------------------------
+* Allokerar lämpligt minne till en kö
+* av pekartyp pqueueADT och sätter
+* initialvärden.
+*/
 pqueueADT NewPQueue(void)
 {
 	pqueueADT pqueue;
@@ -59,12 +78,18 @@ bool IsFull(pqueueADT pqueue)
 }
 
 /*
- * Implementation notes: Enqueue
- * -----------------------------
- * D� elementen sparas osorterat i f�ltet beh�ver endast nya
- * elementet placeras i slutet av f�ltet.
- */
-
+* Function: Enqueue
+* Usage: Enqueue(pqueue, newValue);
+* -------------------------------
+* Denna funktion fyller ut prioritetskön med ett nytt värde
+* valt av användaren. Funktionen testar om kön är full för
+* att då expandera den. Sedan läggs det nya värdet till på
+* sista lediga plats.
+*
+* Funktionen sorterar därefter listan, inklusive det nya
+* värdet, så att alla element sätts in i stigande ordning
+* med minsta värde först.
+*/
 void Enqueue(pqueueADT pqueue, int newValue)
 {
 	int i, temp;
@@ -77,7 +102,6 @@ void Enqueue(pqueueADT pqueue, int newValue)
 
 	for (i = pqueue->numEntries - 1; i > 0; i--) {
 		if (pqueue->entries[i] < pqueue->entries[i - 1]) {
-			// Switchar elementen
 			temp = pqueue->entries[i];
 			pqueue->entries[i] = pqueue->entries[i - 1];
 			pqueue->entries[i - 1] = temp;
@@ -90,17 +114,40 @@ void Enqueue(pqueueADT pqueue, int newValue)
 	
 }
 
+/*
+* Function: DequeueMax
+* Usage: DequeueMax(pqueue);
+* -------------------------------
+* Då elementen sparas osorterat i fältet måste en sökning göras
+* för att finna det största elementet. Felhantering fångar upp
+* om funktionen försöker köras om listan är tom då funktionen
+* skall returnera, sen bortse från, det största elementet i hela
+* prioritetskön.
+*/
 int DequeueMax(pqueueADT pqueue)
 {
 	if (IsEmpty(pqueue))
-		Error("Tried to dequeue max from an empty pqueue!");
+		Error((string)"Tried to dequeue max from an empty pqueue!");
 
 	return pqueue->entries[--(pqueue->numEntries)];
 }
 
+/*
+* Function: expandArray
+* Usage: expandArray(pqueue);
+* -------------------------------
+* Denna funktion skapar en ny array dubbelt så
+* stor som den föregående (pekare på dynamiskt
+* allokerat minnesutrymme), skriver in alla
+* element från den existerande prioritetskön
+* på motsvarande index i den nya arrayn, frigör
+* minnesutrymmet för den gamla arrayn och låter
+* den nya ta dess plats.
+* Funktionen är dold för klienten.
+*/
 static void expandArray(pqueueADT pqueue) {
 	int i;
-	int* expanded;
+	int *expanded;
 
 	expanded = NewArray(pqueue->current_max_size * 2, int);
 
