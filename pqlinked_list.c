@@ -1,35 +1,51 @@
 /*
- * File: pqueue.c
- * --------------
- * Den här filen implementerar en prioritetskö med en
- * vektor med konstant storlek. Implementeringen gör det lätt
- * att sätta in nya element med svårt att plocka ut det största.
- *
- * Cecilia Sönströd, Algoritmer och Datastrukturer 1, vt2020
- */
-
+* File: pqlinked_list.c
+* ---------------
+* Author: Jonathan Thornander, Christoffer Ivarsson Orrelid, Fredrik Dhami
+*
+* Task: Detta program implementerar en prioritetskö
+* i form av en länkad lista. Listan består structer av
+* innehållandes ett heltalsvärde samt en pekare till
+* nästföljande struct i listans ordning.
+*
+* Prioritetskön tar endast heltalsvärden som input
+* och sorterar dem i fallande ordning där störst tal 
+* hamnar först och det största talet tas ut först vid
+* Dequeue.
+*/
 #include "pqueue.h"
 #include "genlib.h"
 
- /* Constant: MAX_ELEMENTS
-  * ----------------------
-  * Den här konstanten anger antalet element i den vektor som
-  * utgör representationen av prioritetskön.
-  */
-
-#define MAX_ELEMENTS 1200000
-
+/* Type definition: cellT
+ * --------------------
+ * Typen cellT pekar på en struct innehållandes en variabel
+ * för ett heltalsvärde samt en pekare till nästföljande
+ * struct i prioritetskön.
+ */
 typedef struct cellT {
 	int value;
 	struct cellT* link;
 } *cellT;
 
+/* Type definition: pqueueCDT
+ * --------------------
+ * Typen pqueueCDT är den konkreta implementeringen av
+ * den exporterade typen pqueueADT. pqueueCDT innehåller
+ * endast en cellT-struct som symboliserar början på kön.
+ */
 struct pqueueCDT {
 	cellT* head;
 };
 
 /* Exported endries */
-
+/*
+* Function: NewPQueue
+* Usage: pqueue = NewPQueue();
+* -------------------------------
+* Allokerar lämpligt minne till en kö
+* av pekartyp pqueueADT och sätter
+* initialvärden.
+*/
 pqueueADT NewPQueue(void)
 {
 	pqueueADT pqueue;
@@ -54,6 +70,18 @@ bool IsFull(pqueueADT pqueue)
 	return FALSE;
 }
 
+/*
+* Function: Enqueue
+* Usage: Enqueue(pqueue, newValue);
+* -------------------------------
+* Denna funktion fyller ut prioritetskön med ett nytt värde
+* valt av användaren. Funktionen använder sig av tre cellT-
+* pekare där newNode håller användarens nya värde och
+* lastNode och currentNode används för att löpa igenom kön
+* för att placera in det nya värdet på rätt plats i de fall
+* kön inte är tom eller det nya värdet skall sättas in på
+* första plats i en ej tom kö.
+*/
 void Enqueue(pqueueADT pqueue, int newValue)
 {
 	cellT newNode, lastNode, currentNode;
@@ -66,28 +94,27 @@ void Enqueue(pqueueADT pqueue, int newValue)
 	lastNode = NULL;
 
 	if (IsEmpty(pqueue)) {
-		pqueue->head = newNode; // Istället för NULL, detta krävs om newNode har är ett nytt högstavärde
+		pqueue->head = newNode;
 	}
 	else {
 		currentNode = pqueue->head;
-		// Test om första värdet är mindre än nya
+
 		if (currentNode->value <= newNode->value) {
 			pqueue->head = newNode;
 			newNode->link = currentNode;
 			return;
 		}
 		while (currentNode != NULL) {
-			if (currentNode->value <= newNode->value) { // sätt in det nya värdet i mellan
+			if (currentNode->value <= newNode->value) {
 				lastNode->link = newNode;
 				newNode->link = currentNode;
 				return;
 			}
-			else { // gå vidare
+			else {
 				lastNode = currentNode;
 				currentNode = currentNode->link;
 			}
 		}
-		// om vi kommit till slutet
 		lastNode->link = newNode;
 	}
 }
@@ -97,10 +124,10 @@ void Enqueue(pqueueADT pqueue, int newValue)
  * -------------------------------------------------
  * Då elementen sparas osorterat i fältet måste en sökning göras
  * för att finna det största elementet. För att ta bort det största
- * elementet flyttas det sista elementet i fältet till den position
- * i vilken det största elementet återfanns samtidigt som antalet
- * element i fältet minskas med 1. Det värde som tas bort returneras från
- * funktionen.
+ * elementet, som alltid är först i kön, pekar en temporär cellT
+ * på dess minnesutrymme, dess heltalsvärde hålls av en int
+ * och köns huvud sätts att peka på nästföljande cellT-struct.
+ * Det oanvända minnesutrymmet frigörs och heltalet returneras.
  */
 
 int DequeueMax(pqueueADT pqueue)
@@ -110,7 +137,7 @@ int DequeueMax(pqueueADT pqueue)
 
 	if (IsEmpty(pqueue))
 		Error("Tried to dequeue max from an empty pqueue!");
-	else{
+	else {
 		temp = pqueue->head;
 		value = temp->value;
 		pqueue->head = temp->link;
